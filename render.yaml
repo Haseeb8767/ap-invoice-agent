@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: ap-invoice-agent
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ANTHROPIC_API_KEY   # optional; without it the app uses the offline parser + local OCR
+        sync: false

@@ -1,0 +1,13 @@
+po_number,line_no,description,quantity,unit_price
+PO-26-1001,1,Copy paper letter size 10-ream case,40,42.50
+PO-26-1001,2,Toner cartridge HP 26X black,12,138.00
+PO-26-1001,3,Ergonomic mesh office chair,6,289.00
+PO-26-1002,1,Ball bearing 6205-2RS sealed,4000,12.00
+PO-26-1003,1,Enterprise platform subscription (monthly),3,9800.00
+PO-26-1003,2,Premium support plan (monthly),3,1450.00
+PO-26-1004,1,LTL freight Dallas TX to Denver CO,1,3450.00
+PO-26-1005,1,Retractable trade show banner 8ft,4,375.00
+PO-26-1005,2,Tri-fold brochures (box of 500),10,185.00
+PO-26-1006,1,27-inch 4K monitor,20,219.00
+PO-26-1007,1,FTL freight Chicago IL to Atlanta GA,1,8200.00
+PO-26-1008,1,LTL freight Houston TX to Phoenix AZ,1,3610.00

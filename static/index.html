@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AP Invoice Agent</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">AP</div>
+      <div>
+        <div class="brand-name">Invoice Agent</div>
+        <div class="brand-sub">PDF → decision</div>
+      </div>
+    </div>
+    <nav>
+      <a href="#/process" data-view="process" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg> Process invoice</a>
+      <a href="#/dashboard" data-view="dashboard" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg> Dashboard</a>
+      <a href="#/reference" data-view="reference" class="nav-item">
+        <svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg> POs &amp; vendors</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div id="mode-badge" class="mode-badge">…</div>
+      <button id="reset-btn" class="btn ghost small">Reset demo data</button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- ================= PROCESS ================= -->
+    <section id="view-process" class="view">
+      <header class="page-head">
+        <div>
+          <h1>Process an invoice</h1>
+          <p class="muted">Drop a vendor invoice PDF or pick a prepared scenario. Every stage runs live below.</p>
+        </div>
+      </header>
+
+      <div class="intake">
+        <label id="dropzone" class="dropzone">
+          <input type="file" id="file-input" accept="application/pdf" hidden>
+          <svg viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
+          <div><strong>Upload invoice PDF</strong><br><span class="muted">drag &amp; drop or click</span></div>
+        </label>
+        <div class="samples" id="samples"></div>
+      </div>
+
+      <div id="run-area" class="run-area hidden">
+        <div class="run-head">
+          <div>
+            <div class="eyebrow">Run <span id="run-id"></span></div>
+            <h2 id="run-file"></h2>
+          </div>
+          <div class="run-meta"><span id="run-timer" class="timer">0.0s</span><span id="run-state" class="pill">running</span></div>
+        </div>
+        <div class="run-grid">
+          <ol id="stages" class="stages"></ol>
+          <div class="side-col">
+            <div id="decision" class="decision hidden"></div>
+            <div class="card pdf-card">
+              <div class="card-head"><span>Source document</span><a id="pdf-open" target="_blank" class="link">Open ↗</a></div>
+              <iframe id="pdf-frame" title="Invoice PDF"></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DASHBOARD ================= -->
+    <section id="view-dashboard" class="view hidden">
+      <header class="page-head">
+        <div>
+          <h1>Dashboard</h1>
+          <p class="muted">Every invoice the agent has processed, its decision and where it is now.</p>
+        </div>
+        <button class="btn" onclick="location.hash='#/process'">+ Process invoice</button>
+      </header>
+      <div id="kpis" class="kpis"></div>
+      <div class="card">
+        <div class="card-head">
+          <span>Runs</span>
+          <div class="filters" id="filters"></div>
+        </div>
+        <div class="table-wrap"><table class="table" id="runs-table"></table></div>
+      </div>
+    </section>
+
+    <!-- ================= RUN DETAIL ================= -->
+    <section id="view-run" class="view hidden"></section>
+
+    <!-- ================= REFERENCE ================= -->
+    <section id="view-reference" class="view hidden">
+      <header class="page-head">
+        <div>
+          <h1>Purchase orders &amp; vendors</h1>
+          <p class="muted">The procurement data the agent matches against. PO balances update as invoices are approved.</p>
+        </div>
+      </header>
+      <div class="card"><div class="card-head"><span>Purchase orders</span></div><div class="table-wrap"><table class="table" id="po-table"></table></div></div>
+      <div class="ref-grid">
+        <div class="card"><div class="card-head"><span>Vendor master</span></div><div class="table-wrap"><table class="table" id="vendor-table"></table></div></div>
+        <div class="card"><div class="card-head"><span>AP policy</span></div><div id="policy"></div></div>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="toast" class="toast hidden"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

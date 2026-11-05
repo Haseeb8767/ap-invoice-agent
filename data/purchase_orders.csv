@@ -1,0 +1,9 @@
+po_number,vendor_id,po_date,status,currency,amount,buyer,description
+PO-26-1001,V001,2026-09-22,open,USD,5090.00,J. Patel,Q4 office supplies replenishment
+PO-26-1002,V002,2026-08-14,open,USD,48000.00,M. Okafor,Ball bearings 6205-2RS blanket order (4000 units)
+PO-26-1003,V003,2026-08-01,open,USD,33750.00,S. Chen,Platform subscription + premium support Sep-Nov
+PO-26-1004,V004,2026-10-02,open,USD,3450.00,M. Okafor,LTL freight Dallas TX to Denver CO
+PO-26-1005,V005,2026-10-06,open,USD,3350.00,R. Alvarez,Trade show print collateral
+PO-26-1006,V001,2026-10-09,open,USD,4380.00,J. Patel,27in monitors for new hires
+PO-26-1007,V004,2026-10-12,open,USD,8200.00,M. Okafor,FTL freight Chicago IL to Atlanta GA
+PO-26-1008,V004,2026-10-20,open,USD,3610.00,M. Okafor,LTL freight Houston TX to Phoenix AZ

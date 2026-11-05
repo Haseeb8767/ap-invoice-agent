@@ -1,0 +1,65 @@
+[
+  {
+    "file": "01_happy_northwind_INV-10421.pdf",
+    "title": "Clean invoice, exact PO match",
+    "scenario": "happy_path",
+    "expected_decision": "APPROVE",
+    "why": "Text PDF, explicit PO, every line matches PO price and quantity, maths and tax reconcile."
+  },
+  {
+    "file": "02_split_po_blueridge_BR-77931.pdf",
+    "title": "Split PO \u2014 partial invoice #2",
+    "scenario": "split_po",
+    "expected_decision": "APPROVE",
+    "why": "PO-26-1002 already has $30,000 invoiced. This $12,000 partial fits inside the $48,000 PO."
+  },
+  {
+    "file": "03_split_po_overbill_blueridge_BR-78002.pdf",
+    "title": "Split PO \u2014 cumulative over-billing",
+    "scenario": "edge_overbill",
+    "expected_decision": "HOLD",
+    "why": "Each invoice looks fine alone, but cumulative billing on PO-26-1002 now exceeds the PO value."
+  },
+  {
+    "file": "04_scanned_no_po_summit_SL-2291.pdf",
+    "title": "Scanned image, no PO number",
+    "scenario": "edge_scanned_no_po",
+    "expected_decision": "REVIEW",
+    "why": "Image-only PDF (needs vision). No PO printed \u2014 the process must infer the PO from vendor, amount and route."
+  },
+  {
+    "file": "05_duplicate_apex_APX-2026-388.pdf",
+    "title": "Disguised duplicate",
+    "scenario": "edge_duplicate",
+    "expected_decision": "REJECT",
+    "why": "'APX/2026/388' is the already-paid 'APX-2026-0388' with different formatting. Exact-match checks miss it."
+  },
+  {
+    "file": "06_missing_fields_quantum.pdf",
+    "title": "Missing invoice # and total that doesn't add up",
+    "scenario": "edge_missing_math",
+    "expected_decision": "HOLD",
+    "why": "No invoice number. Prices say tax-inclusive yet tax is added again, and the printed total matches neither."
+  },
+  {
+    "file": "07_price_variance_apex_APX-2026-0412.pdf",
+    "title": "Unplanned charge above PO",
+    "scenario": "extra_variance",
+    "expected_decision": "REVIEW",
+    "why": "Two lines match the PO; an extra $640 overage line is not on the PO (5.7% over expected)."
+  },
+  {
+    "file": "08_bank_change_northwind_INV-10488.pdf",
+    "title": "Remit-to bank account changed",
+    "scenario": "extra_bank_change",
+    "expected_decision": "HOLD",
+    "why": "Everything matches except the bank account differs from the vendor master \u2014 classic payment-fraud pattern."
+  },
+  {
+    "file": "09_unknown_vendor_shadowline.pdf",
+    "title": "Vendor not in master file",
+    "scenario": "extra_unknown_vendor",
+    "expected_decision": "REJECT",
+    "why": "Vendor is not approved, PO number does not exist, urgent wire request."
+  }
+]

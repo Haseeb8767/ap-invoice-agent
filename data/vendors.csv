@@ -1,0 +1,7 @@
+vendor_id,name,aliases,tax_id,status,bank_last4,payment_terms,phone,email
+V001,Northwind Office Supplies Inc.,Northwind Office Supplies|Northwind Supplies,94-3812207,approved,4471,Net 30,(415) 555-0142,ar@northwind-supplies.com
+V002,Blue Ridge Industrial Parts LLC,Blue Ridge Industrial|Blue Ridge Industrial Parts,58-2290114,approved,9032,Net 45,(828) 555-0177,billing@blueridgeparts.com
+V003,Apex Cloud Services Inc.,Apex Cloud|Apex Cloud Services,47-1188325,approved,6610,Net 30,(512) 555-0199,invoices@apexcloud.io
+V004,Summit Logistics Co.,Summit Logistics|Summit Freight,75-3301876,approved,2285,Net 15,(214) 555-0123,ar@summitlogistics.com
+V005,Quantum Print & Design LLC,Quantum Print|Quantum Print and Design,36-4472019,approved,7754,Net 30,(303) 555-0165,accounts@quantumprint.co
+V006,Harborview Janitorial Services,Harborview Janitorial,91-2045567,suspended,3390,Net 30,(206) 555-0110,billing@harborviewjs.com
