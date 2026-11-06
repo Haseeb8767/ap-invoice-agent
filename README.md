@@ -89,5 +89,6 @@ app/pipeline.py  stage orchestration, live events, human approve/reject
 app/db.py        SQLite run history + invoice ledger
 app/main.py      FastAPI: upload, SSE live stream, dashboard and reference APIs
 static/          UI (vanilla JS, no build step)
+docs/            architecture.mmd (system layers), decision-flow.mmd (how Claude + rules decide)
 data/            vendor master, POs, PO lines, previously paid invoices
 ```

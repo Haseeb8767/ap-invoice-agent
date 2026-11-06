@@ -1,0 +1,76 @@
+%% AP Invoice Agent - how the LLM (Claude) and the rules engine decide
+%% Principle: "Claude reads, rules decide". The LLM only transcribes; the decision is deterministic.
+%% Render: paste into https://mermaid.live, or view on GitHub / VS Code (Mermaid extension)
+flowchart TD
+    START(["Invoice PDF uploaded"]) --> CLS{"Classify<br/>at least 80 text chars per page?"}
+
+    %% ================= Reading (LLM) =================
+    subgraph READ["1 - READING: LLM extraction (transcribe only, never fix or guess)"]
+        CLS -->|"yes: native text PDF"| KEY1{"ANTHROPIC_API_KEY set?"}
+        CLS -->|"no: image-only scan"| KEY2{"ANTHROPIC_API_KEY set?"}
+
+        KEY1 -->|"yes"| CDOC["Claude - PDF sent as document block"]
+        KEY2 -->|"yes"| CVIS["Claude vision - pages rendered to PNG<br/>long side max 2000 px"]
+
+        CDOC --> CALL
+        CVIS --> CALL
+        CALL["Claude Messages API<br/>model claude-opus-5-5, effort medium<br/>system prompt: report values exactly as printed,<br/>null if absent, never correct arithmetic,<br/>never invent an invoice or PO number<br/>output_config: strict JSON schema"]
+
+        CALL --> STOP{"API call OK and<br/>stop_reason normal?"}
+        STOP -->|"401 / 403 / 404 / 429 /<br/>network error"| FB{"Which document type?"}
+        STOP -->|"refusal or max_tokens"| ERR["Run marked error<br/>Re-run button in UI"]
+
+        KEY1 -->|"no"| PARSER["Offline text parser<br/>regex over the text layer"]
+        KEY2 -->|"no"| OCR["Local OCR - RapidOCR<br/>group words into rows, OCR-tolerant parsing,<br/>re-read faint cells, OCR score = confidence"]
+        FB -->|"text PDF"| PARSER
+        FB -->|"scan"| OCR
+
+        STOP -->|"yes"| JSON
+        PARSER --> JSON
+        OCR --> JSON
+        JSON[/"Extracted JSON - same schema for every reader<br/>vendor, tax ID, invoice no and date, PO ref,<br/>line items, subtotal, tax, total, bank last 4,<br/>bank-change and urgency flags,<br/>confidence per field, notes for a human"/]
+    end
+
+    %% ================= Deciding (rules) =================
+    subgraph RULES["2 - DECIDING: deterministic rules engine (app/rules.py, thresholds in POLICY)"]
+        JSON --> INT["Completeness and arithmetic<br/>missing invoice no: HOLD<br/>qty x price wrong: REVIEW<br/>lines vs subtotal, subtotal + tax vs total: HOLD<br/>tax-inclusive conflict, future or stale date,<br/>non-USD, field confidence below 0.80: REVIEW"]
+        INT --> VEN["Vendor verification<br/>fuzzy name or alias match, tax ID<br/>below 85 percent match: REJECT unknown vendor<br/>suspended vendor: REJECT<br/>bank differs from master: HOLD, verify by phone<br/>urgent wire language: fraud signal"]
+        VEN --> DUP["Duplicate detection<br/>normalised invoice no, APX/2026/388 = APX-2026-0388<br/>already paid or approved: REJECT<br/>already in queue: REVIEW<br/>same amount within 14 days: REVIEW"]
+        DUP --> POM{"PO number printed?"}
+        POM -->|"yes"| POX["Explicit match<br/>PO missing from system: REJECT or HOLD<br/>other vendor's PO or PO closed: HOLD"]
+        POM -->|"no"| POI["Infer PO from vendor's open POs<br/>score = 0.5 x amount fit + 0.5 x description fit<br/>score below 0.6: HOLD<br/>best match: REVIEW, never auto-approved"]
+        POX --> VAL
+        POI --> VAL
+        VAL["Line and balance validation<br/>unit price vs PO beyond 2 percent: REVIEW<br/>line not on PO: REVIEW<br/>qty over PO line: HOLD<br/>cumulative billed over PO plus 2 percent: HOLD<br/>total over 50,000 USD: REVIEW"]
+    end
+
+    %% ================= Decision =================
+    VAL --> AGG{"Collect ALL findings in one pass<br/>most severe one wins"}
+    AGG -->|"any REJECT"| REJ["REJECT<br/>do not pay"]
+    AGG -->|"worst is HOLD"| HLD["HOLD<br/>blocked until fixed"]
+    AGG -->|"worst is REVIEW"| REV["REVIEW<br/>human confirms"]
+    AGG -->|"no findings"| APP["APPROVE<br/>straight-through"]
+
+    REJ --> OUT
+    HLD --> OUT
+    REV --> OUT
+    APP --> OUT
+    OUT["Decision card<br/>headline, every reason, checks passed,<br/>next action + owner: buyer, AP lead, AP clerk, procurement,<br/>one drafted vendor email, payment due date"]
+
+    OUT --> LEDGER[("Ledger + audit trail - SQLite<br/>only approved or paid invoices use PO budget")]
+    REV --> HUMAN{"Human reviewer"}
+    HLD --> HUMAN
+    HUMAN -->|"Approve"| LEDGER
+    HUMAN -->|"Reject"| LEDGER
+
+    %% ---------------- Styles ----------------
+    classDef llm fill:#fff3e0,stroke:#d9822b,color:#5c3608
+    classDef rule fill:#f3e8fd,stroke:#8a4fd1,color:#3a1a5c
+    classDef ok fill:#e6f4ea,stroke:#2e7d32,color:#1b4d20
+    classDef warn fill:#fff8e1,stroke:#c99700,color:#5c4500
+    classDef bad fill:#fdecea,stroke:#c62828,color:#5c1010
+    class CDOC,CVIS,CALL,PARSER,OCR,JSON llm
+    class INT,VEN,DUP,POX,POI,VAL rule
+    class APP ok
+    class REV warn
+    class HLD,REJ,ERR bad

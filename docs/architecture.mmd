@@ -1,0 +1,62 @@
+%% AP Invoice Agent - high-level architecture
+%% Render: paste into https://mermaid.live, or view on GitHub / VS Code (Mermaid extension)
+flowchart TB
+    USERS(["AP clerk / reviewer   -   manager / evaluator"])
+
+    subgraph L1["1 - Presentation   static/   (browser, vanilla JS)"]
+        UI["Process page: upload PDF or pick a sample, live 9-stage stepper,<br/>decision card with Approve / Reject<br/>Dashboard: KPIs, run history, replay any run's audit trail<br/>POs and vendors: PO budget bars, vendor master, policy"]
+    end
+
+    subgraph L2["2 - API   app/main.py   (FastAPI in Docker on Render free tier)"]
+        API["POST /api/runs - upload and validate PDF<br/>GET /api/runs/id/events - live stage stream (Server-Sent Events)<br/>POST /api/runs/id/action - human approve / reject<br/>GET /api/runs, /stats, /reference, /health"]
+    end
+
+    subgraph L3["3 - Orchestration   app/pipeline.py"]
+        ORCH["Background thread per invoice<br/>Ingest > Classify > Extract > Integrity > Vendor > Duplicate > PO match > Validate > Decide<br/>every stage emits an event and is saved to the audit trail"]
+    end
+
+    subgraph L4["4 - Reading   app/extract.py, app/ocr.py   (AI reads, never decides)"]
+        CLS{"Classify PDF<br/>text layer or scan?"}
+        CLAUDE["Claude API - claude-opus-5-5<br/>text PDF as document, scan via vision<br/>strict JSON schema output"]
+        OFF["Offline fallback - no key or API error<br/>text PDF: regex parser<br/>scan: local OCR (RapidOCR)"]
+        JSON[/"Extracted fields + confidence per field<br/>same JSON schema for every reader"/]
+        CLS --> CLAUDE
+        CLS -.-> OFF
+        CLAUDE -.->|"on failure"| OFF
+        CLAUDE --> JSON
+        OFF --> JSON
+    end
+
+    subgraph L5["5 - Deciding   app/rules.py   (deterministic, thresholds in app/config.py)"]
+        CHECKS["Checks: completeness and arithmetic, vendor and bank,<br/>duplicates, PO match or inference, prices, cumulative PO budget"]
+        DECIDE["Decision: REJECT > HOLD > REVIEW > APPROVE<br/>headline, next action + owner, drafted vendor email"]
+        CHECKS --> DECIDE
+    end
+
+    subgraph L6["6 - Data"]
+        MASTER[("data/*.csv<br/>vendors, purchase orders,<br/>PO lines, paid invoices")]
+        DB[("SQLite runtime/ap.db<br/>runs + audit trail<br/>invoice ledger vs POs")]
+    end
+
+    USERS --> UI
+    UI <-->|"HTTP + live events"| API
+    API -->|"start run"| ORCH
+    ORCH --> CLS
+    JSON --> CHECKS
+    DECIDE -->|"decision + audit trail"| DB
+    MASTER -->|"reference data"| CHECKS
+    DB -.->|"prior invoices, PO billed so far"| CHECKS
+    API -.->|"history, stats, human overrides"| DB
+
+    UPTIME["UptimeRobot pings /api/health every 5 min<br/>so the free server never sleeps"] -.-> API
+
+    classDef ui fill:#e8f0fe,stroke:#4a6fd1,color:#1a2b5c
+    classDef srv fill:#eef7ee,stroke:#3c8c48,color:#173d1d
+    classDef ai fill:#fff3e0,stroke:#d9822b,color:#5c3608
+    classDef rules fill:#f3e8fd,stroke:#8a4fd1,color:#3a1a5c
+    classDef data fill:#f1f1f1,stroke:#777,color:#222
+    class UI ui
+    class API,ORCH srv
+    class CLS,CLAUDE,OFF,JSON ai
+    class CHECKS,DECIDE rules
+    class MASTER,DB data
