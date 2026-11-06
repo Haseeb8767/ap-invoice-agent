@@ -71,7 +71,11 @@ async function startRun(fd) {
     renderRunShell(area, run);
     area.scrollIntoView({ behavior: "smooth", block: "start" });
     streamRun(area, run_id);
-  } catch (e) { toast("Could not start run: " + e.message); }
+  } catch (e) {
+    toast(e instanceof TypeError
+      ? "Could not reach the server. If the app was idle it may be waking up (up to ~1 min) — wait and try again."
+      : "Could not start run: " + e.message);
+  }
 }
 
 function renderRunShell(el, run) {
@@ -109,20 +113,50 @@ function streamRun(el, runId) {
   const tick = setInterval(() => (timer.textContent = ((performance.now() - t0) / 1000).toFixed(1) + "s"), 100);
   const es = new EventSource(`/api/runs/${runId}/events`);
   currentLive = es;
+  let finished = false;
+  const finish = (run) => {
+    if (finished) return; finished = true;
+    es.close(); clearInterval(tick);
+    (run.stages || []).forEach((st) => setStage(el, st, true));
+    timer.textContent = ((run.duration_ms || 0) / 1000).toFixed(1) + "s";
+    el.querySelector(".pill").textContent = "complete";
+    renderDecision(el, run);
+    loadHealth();
+  };
   es.onmessage = async (m) => {
     const ev = JSON.parse(m.data);
     if (ev.type === "stage_start") setStage(el, { key: ev.key, status: "running", summary: "Running…" });
     else if (ev.type === "stage_done") setStage(el, ev, true);
-    else if (ev.type === "run_done") {
-      es.close(); clearInterval(tick);
-      const run = await api(`/api/runs/${runId}`);
-      timer.textContent = (run.duration_ms / 1000).toFixed(1) + "s";
-      el.querySelector(".pill").textContent = "complete";
-      renderDecision(el, run);
-      loadHealth();
-    }
+    else if (ev.type === "run_done") finish(await api(`/api/runs/${runId}`));
   };
-  es.onerror = () => { es.close(); clearInterval(tick); };
+  // Live stream dropped (proxy timeout, flaky network, server restart): fall back to polling.
+  es.onerror = () => {
+    if (finished) return;
+    es.close();
+    let tries = 0;
+    const poll = async () => {
+      if (finished || currentLive !== es) return;
+      tries++;
+      try {
+        const r = await fetch(`/api/runs/${runId}`);
+        if (r.status === 404) {
+          finished = true; clearInterval(tick);
+          el.querySelector(".pill").textContent = "lost";
+          toast("The server restarted while processing this invoice (for example, it ran out of memory or was " +
+                "redeployed), so the run was lost. Please upload it again.");
+          return;
+        }
+        if (r.ok) {
+          const run = await r.json();
+          if (run.status !== "running") return finish(run);
+          (run.stages || []).forEach((st) => setStage(el, st, true));
+        }
+      } catch (_) { /* server unreachable for a moment; keep trying */ }
+      if (tries < 90) setTimeout(poll, 2000);
+      else { finished = true; clearInterval(tick); toast("Lost contact with the server. Refresh the page to check the result."); }
+    };
+    setTimeout(poll, 1500);
+  };
 }
 
 function setStage(el, st, autoOpen) {

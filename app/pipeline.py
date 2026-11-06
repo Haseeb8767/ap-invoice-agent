@@ -30,6 +30,8 @@ STAGES = [
 # run_id -> list of events (in-memory, for the live SSE stream)
 EVENTS: dict[str, list] = {}
 _ev_lock = threading.Lock()
+# One extraction at a time: OCR/rendering is the memory-heavy step, and free hosting has 512 MB.
+_extract_lock = threading.Lock()
 
 
 def _emit(run_id, event):
@@ -108,7 +110,8 @@ def _run(run_id: str, path: Path, filename: str):
         # 3. Extract ------------------------------------------------------------
         with Stage(run_id, *STAGES[2], stages) as s:
             try:
-                ext = extract(path, cls)
+                with _extract_lock:
+                    ext = extract(path, cls)
             except ExtractionUnavailable as e:
                 iss = [rules.issue("UNREADABLE_SCAN", "HOLD", str(e))]
                 s.done("Could not read document automatically", {"error": str(e)}, iss)

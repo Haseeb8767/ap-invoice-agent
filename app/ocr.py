@@ -19,7 +19,9 @@ from pathlib import Path
 import numpy as np
 import pymupdf
 
-DPI = 200
+# Pages are rendered so the long side is this many pixels, whatever the PDF's page size claims
+# (phone-scanner PDFs often have enormous pages). 2200 px = a US Letter page at 200 dpi.
+PAGE_LONG_SIDE_PX = 2200
 DET_MAX_SIDE = int(os.getenv("OCR_DET_MAX_SIDE", "1024"))
 _ENGINE = None
 
@@ -58,8 +60,13 @@ def _img(pix):
     return np.ascontiguousarray(a[:, :, :3])
 
 
+def _zoom(page):
+    return PAGE_LONG_SIDE_PX / max(page.rect.width, page.rect.height, 1)
+
+
 def _read_boxes(page):
-    res, _ = _engine()(_img(page.get_pixmap(dpi=DPI)))
+    z = _zoom(page)
+    res, _ = _engine()(_img(page.get_pixmap(matrix=pymupdf.Matrix(z, z))))
     boxes = []
     for pts, txt, score in res or []:
         xs, ys = [p[0] for p in pts], [p[1] for p in pts]
@@ -129,14 +136,14 @@ def _labelled_amount(rows, label):
 
 
 def _reread_cell(page, x0, x1, y0, y1):
-    """Second, higher-resolution pass on one table cell (small digits like a lone '1' are often missed)."""
-    """Returns (value, score) or (None, 0). The text detector skips lone digits, so we isolate the ink
+    """Second, higher-resolution pass on one table cell (small digits like a lone '1' are often missed).
+    Returns (value, score) or (None, 0). The text detector skips lone digits, so we isolate the ink
     ourselves and run only the recogniser on it."""
-    k = 72 / DPI
-    clip = pymupdf.Rect(x0 * k, y0 * k, x1 * k, y1 * k)
-    if clip.width < 4 or clip.height < 4:
+    z = _zoom(page)
+    clip = pymupdf.Rect(x0 / z, y0 / z, x1 / z, y1 / z)
+    if clip.width * z < 4 or clip.height * z < 4:
         return None, 0.0
-    a = _img(page.get_pixmap(dpi=300, clip=clip))
+    a = _img(page.get_pixmap(matrix=pymupdf.Matrix(1.5 * z, 1.5 * z), clip=clip))
     g = a.mean(axis=2)
     dark = g < min(170, np.median(g) - 60)
     dark[dark.mean(axis=1) > 0.5] = False          # ignore table rules / header bands

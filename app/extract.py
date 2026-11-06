@@ -139,7 +139,8 @@ def _content_blocks(pdf_path: Path, route: str) -> list[dict]:
     blocks = []
     doc = pymupdf.open(pdf_path)
     for page in doc:
-        png = page.get_pixmap(dpi=150).tobytes("png")
+        z = min(150 / 72, 2000 / max(page.rect.width, page.rect.height, 1))  # 150 dpi, long side <= 2000 px
+        png = page.get_pixmap(matrix=pymupdf.Matrix(z, z)).tobytes("png")
         blocks.append({"type": "image", "source": {"type": "base64", "media_type": "image/png",
                                                    "data": base64.standard_b64encode(png).decode()}})
     doc.close()
