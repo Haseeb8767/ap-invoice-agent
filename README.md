@@ -13,6 +13,8 @@ pinned: false
 **Case study PS-1 (Finance / AP).** This app takes a vendor invoice PDF and returns a reasoned decision:
 **APPROVE / REVIEW / HOLD / REJECT**. Every stage is shown live in the UI, and a dashboard shows the history of all runs.
 
+> Reviewing with an AI agent? See [AI_REVIEW.md](AI_REVIEW.md): requirement → evidence map, edge-case matrix, and how to verify.
+
 ## Design principle: Claude reads, rules decide
 
 | Step | Who does it | Why |
