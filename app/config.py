@@ -4,6 +4,7 @@ Every threshold the decision engine uses lives here so the policy is
 auditable in one place (and easy to discuss with a finance controller).
 """
 import os
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,6 +54,16 @@ POLICY = {
     "auto_approve_limit": 50000.00,
     "base_currency": "USD",
 }
+
+def business_date() -> date:
+    """'Today' for date rules (stale / future-dated invoices).
+
+    Defaults to the real date. Set AS_OF_DATE=YYYY-MM-DD to pin it, which keeps tests and demos
+    deterministic as the sample invoices age.
+    """
+    pinned = os.getenv("AS_OF_DATE")
+    return date.fromisoformat(pinned) if pinned else date.today()
+
 
 # Pacing between stages so the live view is watchable in a demo (seconds).
 STAGE_DELAY = float(os.getenv("STAGE_DELAY", "0.45"))

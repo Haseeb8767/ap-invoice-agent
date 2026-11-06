@@ -19,6 +19,7 @@ with every intermediate stage visible live in the UI and stored as an audit trai
 | The app is live | `GET /api/health` returns `{"ok": true, "mode": ..., "local_ocr": true}` |
 | It processes a real PDF end to end | `POST /api/runs` with form field `sample=01_happy_northwind_INV-10421.pdf`, then `GET /api/runs/{run_id}`. You get 9 stages, a decision, reasons and a next action |
 | Every scenario gives the expected decision | `python scripts/run_samples.py` prints `9/9 scenarios produced the expected decision` |
+| The behaviour is specified as tests | `pip install -r requirements-dev.txt && python -m pytest` runs **152 passing specs** across unit, integration (Claude request contract with a fake client, 401 fallback, refusal handling), acceptance (every sample PDF, checked for the right *reasons*) and API layers. `tests/README.md` documents the red-green-refactor workflow and lists the injected bugs the suite caught |
 | The expected outcomes are declared in advance | `samples/manifest.json`: file, scenario, expected decision, and why |
 | Run history and dashboard data | `GET /api/runs`, `GET /api/stats` |
 | Reference data the rules use | `GET /api/reference` (POs with billed amounts, vendor master, policy thresholds) |
@@ -109,6 +110,7 @@ Diagrams: `docs/architecture.mmd` (system layers), `docs/decision-flow.mmd` (how
 | `app/main.py` | FastAPI endpoints, SSE stream |
 | `static/` | UI: Process page, Dashboard, POs & vendors |
 | `scripts/run_samples.py` | Runs all scenarios headlessly and checks the expected decisions |
+| `tests/` | Executable specification (pytest), with CI in `.github/workflows/tests.yml` |
 
 ---
 

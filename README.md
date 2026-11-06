@@ -65,6 +65,7 @@ uvicorn app.main:app --port 8000         # open http://localhost:8000
 ```
 
 * With no API key (or if Claude is unreachable), the app runs in **offline mode**: a regex parser for text PDFs and **local OCR (RapidOCR, free, CPU-only) for scanned images**. OCR confidence scores flow into the rules engine, so shaky reads go to a human. All 9 scenarios still produce the expected decision. The sidebar badge shows which mode is active.
+* **Tests:** `pip install -r requirements-dev.txt` then `python -m pytest`. That runs 152 specs (unit → integration → acceptance → API) with no API key needed; `-m "not slow"` gives a fast loop. See [tests/README.md](tests/README.md) for the red-green-refactor workflow. CI runs them on every push (`.github/workflows/tests.yml`).
 * `python scripts/run_samples.py` runs all 9 scenarios headlessly and checks the expected decisions.
 * `python scripts/generate_samples.py` regenerates the invoice PDFs.
 * **Reset demo data** (sidebar) clears runs and restores the PO ledger.
@@ -91,6 +92,7 @@ app/pipeline.py  stage orchestration, live events, human approve/reject
 app/db.py        SQLite run history + invoice ledger
 app/main.py      FastAPI: upload, SSE live stream, dashboard and reference APIs
 static/          UI (vanilla JS, no build step)
+tests/           executable spec: unit, integration (LLM contract, fallbacks), acceptance, API
 docs/            architecture.mmd (system layers), decision-flow.mmd (how Claude + rules decide)
 data/            vendor master, POs, PO lines, previously paid invoices
 ```

@@ -19,7 +19,7 @@ from datetime import date, datetime, timedelta
 from rapidfuzz import fuzz
 
 from . import data, db
-from .config import POLICY
+from .config import POLICY, business_date
 
 SEVERITY_RANK = {"INFO": 0, "REVIEW": 1, "HOLD": 2, "REJECT": 3}
 DECISION_FOR = {0: "APPROVE", 1: "REVIEW", 2: "HOLD", 3: "REJECT"}
@@ -82,7 +82,7 @@ def terms_days(terms: str | None) -> int:
 # Stage: document integrity (completeness + arithmetic + dates)
 # ---------------------------------------------------------------------------
 def check_integrity(ext: dict, today: date | None = None) -> tuple[dict, list]:
-    today = today or date.today()
+    today = today or business_date()
     issues, checks = [], []
     tol = POLICY["math_tolerance_abs"]
 
@@ -495,11 +495,7 @@ def decide(all_issues: list, ext: dict, vendor: dict | None, po: dict | None, po
 
 
 def _lead(blocking):
-    s = blocking[0]["short"].rstrip(".")
-    return s + (f" (+{len(blocking) - 1} more)" if len(blocking) > 1 else "") + "."
-
-
-def _lead(blocking):
+    """Headline text: the first blocking reason, plus how many more there are."""
     s = blocking[0]["short"].rstrip(".")
     return s + (f" (+{len(blocking) - 1} more)" if len(blocking) > 1 else "") + "."
 
