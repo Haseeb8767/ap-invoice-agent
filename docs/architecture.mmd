@@ -1,4 +1,5 @@
 %% AP Invoice Agent - high-level architecture
+%% Live app: https://ap-invoice-agent-hsap.onrender.com
 %% Render: paste into https://mermaid.live, or view on GitHub / VS Code (Mermaid extension)
 flowchart TB
     USERS(["AP clerk / reviewer   -   manager / evaluator"])
@@ -7,7 +8,7 @@ flowchart TB
         UI["Process page: upload PDF or pick a sample, live 9-stage stepper,<br/>decision card with Approve / Reject<br/>Dashboard: KPIs, run history, replay any run's audit trail<br/>POs and vendors: PO budget bars, vendor master, policy"]
     end
 
-    subgraph L2["2 - API   app/main.py   (FastAPI in Docker on Render free tier)"]
+    subgraph L2["2 - API   app/main.py   (FastAPI in Docker on Render free tier - ap-invoice-agent-hsap.onrender.com)"]
         API["POST /api/runs - upload and validate PDF<br/>GET /api/runs/id/events - live stage stream (Server-Sent Events)<br/>POST /api/runs/id/action - human approve / reject<br/>GET /api/runs, /stats, /reference, /health"]
     end
 
